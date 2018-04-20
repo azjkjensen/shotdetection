@@ -1,4 +1,4 @@
-function [indices] = extractkeyframes_project(video)
+function [indices, ranks] = extractkeyframes_project(video)
  % Number of bins for each component of the HSV histogram
 h_bins=8;
 s_bins=4;
@@ -6,8 +6,8 @@ v_bins=4;
 number_of_bins=h_bins+s_bins+v_bins;
 
 %Adjust to get more/less frames
-threshold=.028; 
-
+%threshold=.028; 
+threshold = .01;
 %window size
 N=2;  
 frameNumber = N+1;
@@ -113,6 +113,7 @@ for i = 1:int32(ceil(expectedNumberOfFramesExact/SAMPLE_SIZE))
     end
 end
 
+indices = indices./(inputv.framerate);
 disp("Expected number of frames: " + expectedNumberOfFrames + ...
    " Actual number of frames: " + totalFramesRead);
 cd('../..');
