@@ -6,8 +6,7 @@ v_bins=4;
 number_of_bins=h_bins+s_bins+v_bins;
 
 %Adjust to get more/less frames
-%threshold=.028; 
-threshold = .01;
+threshold=.028; 
 %window size
 N=2;  
 frameNumber = N+1;
@@ -20,7 +19,6 @@ inputv = VideoReader(video);   % take in inputs
 expectedNumberOfFramesExact = inputv.duration * inputv.framerate;
 expectedNumberOfFrames = int32(expectedNumberOfFramesExact);
 totalFramesRead = 0;
-myCount = 1;
 
 for i = 1:int32(ceil(expectedNumberOfFramesExact/SAMPLE_SIZE))
     % Read frames until the end of the video, SAMPLE_SIZE at a time. 
@@ -34,13 +32,14 @@ for i = 1:int32(ceil(expectedNumberOfFramesExact/SAMPLE_SIZE))
     totalFramesRead = totalFramesRead + numberOfFramesRead;
     
     % Process this set of images.
-
-
-    if i == 1
+    if i == 1 
+        % If the first frame, prepare the histograms and cd into
+        % the proper directory.
         cd ('KeyFrameExtraction/colorspace');
         histograms = zeros(expectedNumberOfFrames, number_of_bins);
     end
     
+    % Assemble histograms for each component of the image.
     frameStart = (SAMPLE_SIZE * (i - 1)) + 1;
     for j = frameStart:totalFramesRead
             hsv_image=colorspace('RGB->HSV', frames(:,:,:,j - frameStart + 1));
@@ -51,11 +50,11 @@ for i = 1:int32(ceil(expectedNumberOfFramesExact/SAMPLE_SIZE))
     end
     
     if(i == 1)
-        %matrix for time N, where N is the window size
+        % Matrix for time N, where N is the window size
         S=svd(histograms( 1 : N, : ) );
         previous_rank=length(find( S/S(1)>threshold ));
         
-        %Matrix for time N+1
+        % Matrix for time N+1
         S=svd(histograms( 2 : (N+1), : ));
         next_rank=length(find( S/S(1)>threshold));
         
@@ -82,10 +81,9 @@ for i = 1:int32(ceil(expectedNumberOfFramesExact/SAMPLE_SIZE))
             previous_rank=rank;
         end
     else %not the first iteration through the loop
-        disp("Frames " + (frameStart) + " to " +  (frameStart + numberOfFramesRead -1));
+        disp("Working on frames " + (frameStart) + " to " + ...
+            (frameStart + numberOfFramesRead -1));
         for t = frameStart : frameStart + numberOfFramesRead-1
-%             disp(myCount);
-%             myCount = myCount + 1;
             rank=next_rank;
             if (t+N-1) > expectedNumberOfFrames
                 upperLimit = frameStart + numberOfFramesRead - 1;
@@ -107,7 +105,6 @@ for i = 1:int32(ceil(expectedNumberOfFramesExact/SAMPLE_SIZE))
                 a=a+1;
             end
             frameNumber=frameNumber+1;
-%             sprintf('Frame Number=%d', frameNumber)
             previous_rank=rank;
         end
     end
@@ -117,4 +114,6 @@ indices = indices./(inputv.framerate);
 disp("Expected number of frames: " + expectedNumberOfFrames + ...
    " Actual number of frames: " + totalFramesRead);
 cd('../..');
-end % Returns indices, a vector of frame indices where keyframes are found.
+end
+% Returns indices, a vector of frame indices where keyframes are found, and
+% ranks, a vector of the ranks corresponding to the given indices.
